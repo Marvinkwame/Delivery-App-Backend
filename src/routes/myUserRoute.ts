@@ -7,6 +7,6 @@ const router = express.Router();
 
 router.get("/", jwtCheck, jwtParse, myUserController.getCurrentUser);
 router.post("/", jwtCheck, myUserController.createCurrentUser)
-router.patch("/", jwtCheck, jwtParse, validateMyUserRequest, myUserController.updateCurrentUser)
+router.put("/", jwtCheck, jwtParse, validateMyUserRequest, myUserController.updateCurrentUser) 
 
 export default router;
