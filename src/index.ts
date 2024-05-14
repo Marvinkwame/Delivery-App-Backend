@@ -4,6 +4,7 @@ import mongoose from "mongoose"
 import "dotenv/config"
 import myUserRoute from "./routes/myUserRoute"
 import myRestaurantRoute from "./routes/nyRestaurantRoute"
+import restaurantRoute from "./routes/RestaurantRoute"
 import { v2 as cloudinary } from "cloudinary"
 
 mongoose.connect(process.env.MONGODB_CONNECTION_STRING as string)
@@ -25,6 +26,7 @@ app.get("/health", async (req: Request, res: Response) => {
 
 app.use("/api/my/user", myUserRoute);
 app.use("/api/my/restaurant", myRestaurantRoute)
+app.use("/api/restaurant", restaurantRoute)
 
 app.listen("5000", () => {
     console.log(`You are now on localhost: 5000`)
