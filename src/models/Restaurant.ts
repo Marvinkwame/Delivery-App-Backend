@@ -1,57 +1,66 @@
-import mongoose from "mongoose"
+import mongoose, { InferSchemaType } from "mongoose";
 
 const menuItemSchema = new mongoose.Schema({
-    name: {
-        type: String, 
-        required: true
-    },
-    price: {
-        type: Number,
-        required: true
-    }
-})
+  _id: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    default: () => new mongoose.Types.ObjectId()
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+  },
+});
 
+
+export type MenuItemType = InferSchemaType<typeof menuItemSchema>
 
 const restaurantSchema = new mongoose.Schema({
-    user: {
-        //creating a reference to the user document for theu ser creatingthe restaurant
-        type: mongoose.Schema.Types.ObjectId, ref: "User"
+  user: {
+    //creating a reference to the user document for theu ser creatingthe restaurant
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+  restaurantName: {
+    type: String,
+    required: true,
+  },
+  city: {
+    type: String,
+    required: true,
+  },
+  country: {
+    type: String,
+    required: true,
+  },
+  deliveryPrice: {
+    type: Number,
+    required: true,
+  },
+  estimatedDeliveryTime: {
+    type: Number,
+    required: true,
+  },
+  cuisines: [
+    {
+      type: String,
+      required: true, //an array of strings
     },
-    restaurantName: {
-        type: String,
-        required: true
-    },
-    city: {
-        type: String,
-        required: true
-    },
-    country: {
-        type: String,
-        required: true
-    },
-    deliveryPrice: {
-        type: Number,
-        required: true
-    },
-    estimatedDeliveryTime: {
-        type: Number,
-        required: true
-    },
-    cuisines: [{
-        type: String,
-        required: true //an array of strings
-    }],
-    menuItems: [menuItemSchema],
-    imageUrl: {
-        type: String,
-        required: true //the url we get back from cloudinary when we upload the image
-    },
-    lastUpdated: {
-        type: Date,
-        required: true
-    }
-
-})
+  ],
+  menuItems: [menuItemSchema],
+  imageUrl: {
+    type: String,
+    required: true, //the url we get back from cloudinary when we upload the image
+  },
+  lastUpdated: {
+    type: Date,
+    required: true,
+  },
+});
 
 const Restaurant = mongoose.model("Restaurant", restaurantSchema);
 
