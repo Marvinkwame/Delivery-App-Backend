@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
 import Stripe from "stripe";
 import Restaurant, { MenuItemType } from "../models/Restaurant";
+import Order from "../models/Order";
 
 const STRIPE = new Stripe(process.env.STRIPE_API_KEY as string);
 const FRONTEND_URL = process.env.FRONTEND_URL as string;
+const STRIPE_ENDPOINT_SECRET = process.env.STRIPE_WEBHOOK_SECRET as string;
 
- type CheckoutSessionRequest = {
+type CheckoutSessionRequest = {
   cartItems: {
     //get the price from the backend for security reasons
     menuItemId: string;
@@ -21,6 +23,38 @@ const FRONTEND_URL = process.env.FRONTEND_URL as string;
   restaurantId: string;
 };
 
+const stripeWebhookHandler = async (req: Request, res: Response) => {
+  let event;
+  try {
+    const sig = req.headers["stripe-signature"];
+    //STRIPE verifies the request by using the endpoint secret then constructs the event
+    //and gives us the results in the event object
+    event = STRIPE.webhooks.constructEvent(
+      req.body,
+      sig as string,
+      STRIPE_ENDPOINT_SECRET
+    );
+  } catch (err: any) {
+    console.log(err);
+    return res.status(400).send(`Webhook error: ${err.message}`);
+  }
+
+  if(event?.type === "checkout.session.completed") {
+    const order = await Order.findById(event.data.object.metadata?.orderId);
+
+    if(!order) {
+      return res.status(400).json({ message: "Order not found" });
+    }
+
+    order.totalAmount = event.data.object.amount_total;
+    order.status = "paid";
+
+    await order.save();
+  }
+
+  res.status(200).send();
+};
+
 const createCheckoutSession = async (req: Request, res: Response) => {
   try {
     //take the cartitems and order details from the req.body
@@ -33,6 +67,15 @@ const createCheckoutSession = async (req: Request, res: Response) => {
       throw new Error("Restaurant not found");
     }
 
+    const newOrder = new Order({
+      restaurant: restaurant,
+      user: req.userId,
+      status: "placed",
+      deliveryDetails: checkoutSessionRequest.deliveryDetails,
+      cartItems: checkoutSessionRequest.cartItems,
+      createdAt: new Date(),
+    });
+
     const lineItems = createLineItems(
       checkoutSessionRequest,
       restaurant.menuItems
@@ -41,7 +84,7 @@ const createCheckoutSession = async (req: Request, res: Response) => {
     const session = await createSession(
       //simply creating the checkout page for the user
       lineItems,
-      "TEST_ORDER_ID",
+      newOrder._id.toString(),
       restaurant.deliveryPrice,
       restaurant._id.toString()
     );
@@ -51,6 +94,7 @@ const createCheckoutSession = async (req: Request, res: Response) => {
       return res.status(500).json({ message: "Error creating stripe session" });
     }
 
+    await newOrder.save();
     res.json({ url: session.url });
   } catch (error: any) {
     console.log(error);
@@ -123,8 +167,7 @@ const createSession = async (
   return sessionData;
 };
 
-
-
 export default {
-    createCheckoutSession
-}
+  createCheckoutSession,
+  stripeWebhookHandler,
+};

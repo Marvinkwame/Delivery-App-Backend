@@ -19,9 +19,13 @@ cloudinary.config({
 });
 
 const app = express();
-app.use(express.json());
+
 app.use(cors());
 
+
+app.use("/api/order/checkout/webhook", express.raw({ type: "*/*"})) //for the request to be received at the endpoint
+
+app.use(express.json());
 app.get("/health", async (req: Request, res: Response) => {
   res.send({ message: "Health OK!" });
 });
