@@ -6,5 +6,7 @@ const router = express.Router();
 
 router.post("/checkout/create-checkout-session", jwtCheck, jwtParse, orderController.createCheckoutSession);
 router.post("/checkout/webhook", orderController.stripeWebhookHandler)
+router.get("/", jwtCheck, jwtParse, orderController.getMyOrders)
+
 
 export default router;
